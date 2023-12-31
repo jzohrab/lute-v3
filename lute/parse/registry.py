@@ -3,12 +3,13 @@ Parser registry.
 
 List of available parsers.
 """
+from functools import lru_cache
 
 from lute.parse.base import AbstractParser
 from lute.parse.space_delimited_parser import SpaceDelimitedParser, TurkishParser
 from lute.parse.mecab_parser import JapaneseParser
 from lute.parse.character_parser import ClassicalChineseParser
-
+from lute.parse.mandarin_parser import MandarinParser
 
 # List of ALL parsers available, not necessarily all supported.
 # This design feels fishy, but it suffices for now.
@@ -17,6 +18,7 @@ parsers = {
     "turkish": TurkishParser,
     "japanese": JapaneseParser,
     "classicalchinese": ClassicalChineseParser,
+    "mandarin": MandarinParser,
 }
 
 
@@ -29,6 +31,7 @@ def _supported_parsers():
     return ret
 
 
+@lru_cache()
 def get_parser(parser_name) -> AbstractParser:
     "Return the supported parser with the given name."
     if parser_name in _supported_parsers():
