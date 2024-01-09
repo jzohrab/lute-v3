@@ -1,10 +1,11 @@
 <table id="booktable" class="table dataTable stripe">
   <thead>
     <tr>
-      <th width="40%">Title</th>
+      <th>Title</th>
       <th>Language</th>
       <th>Tags</th>
-      <th>Word count (% known)</th>
+      <th>Word count</th>
+      <th>Status stats</th>
       <th>Actions</th>
     </tr>
   </thead>
@@ -39,7 +40,7 @@
       search: { search: initial_search },
       columnDefs: [
         {
-          "name": "BkTitle", "targets": 0,
+          "name": "BkTitle", "targets": 0, "width": "40%",
           "render": function ( data, type, row, meta ) {
             const bkid = parseInt(row[3]);
             const pgnum = parseInt(row[10]);
@@ -58,29 +59,52 @@
             return `<a class="${book_title_classes.join(' ')}" href="/read/${bkid}">${row[0]}${pgfraction}</a>`;
           }
         },
-        { "name": "LgName", "targets": 1 },
-        { "name": "TagList", "targets": 2 },
+        { "name": "LgName", "targets": 1, },
+        { "name": "TagList", "targets": 2, },
 
         { "targets": 3,
           "data": null,
           "searchable": false,
           "orderable": false,
+          "width": "8%",
           "render": function ( data, type, row, meta ) {
-            let ret = row[5];
-            const pct = row[7];
-            const unkcount = row[6];
-            if (pct != null) {
-              const termcount = row[9];
-              const knownpct = 100 - parseInt(pct);
-              ret += `&nbsp;<span title="${unkcount} unknowns in next ${termcount} unique terms">(${knownpct}%)</span>`;
+            const bookId = row[3];
+            let ret = `<span title="${row[9]} unique words on the current page">${row[5]}</span>`;
+            return ret;
+          }
+        },
+        { "targets": 4,
+          "data": null,
+          "searchable": false,
+          "orderable": false,
+          "width": "30%",
+          "render": function ( data, type, row, meta ) {
+            let ret;
+            const bookId = row[3];
+            const sd = JSON.parse(`${row[12]}`);
+            if (sd == null) {
+              ret = `<div class="status-bar-container status-bar-container-empty" title="Stats calculated after opening the book"><em>N/A</em></div>`
             }
-            // TODO issue 102 status graph: render graph of distribution.
-            ret += `<div style="display: none">${row[12]}</div>`;
+            // hide individual percent bars if the value is less than 1 percent
+            // hide the percentage label if the value is less than 6 percent (because of less space)
+            // show rounded value on the label, use truncated version for flex value
+            // show the actual value in the tooltip
+            else {
+              ret = `<div class="status-bar-container">
+              <div class="status-bar0 status-bar" title="Unknown: ${sd[0].toFixed(2)}%" style="flex: ${sd[0].toFixed(2)}; display:${sd[0] < 1 ? "none": "inline-flex"}"><span>\xa0${sd[0] > 6 ? Math.round(sd[0]) + '%': ""}</span></div>
+              <div class="status-bar1 status-bar" title="New: ${sd[1].toFixed(2)}%" style="flex: ${sd[1].toFixed(2)}; display:${sd[1] < 1 ? "none": "inline-flex"}"><span>\xa0${sd[1] > 6 ? Math.round(sd[1]) + '%': ""}</span></div>
+              <div class="status-bar2 status-bar" title="Status 2: ${sd[2].toFixed(2)}%" style="flex: ${sd[2].toFixed(2)}; display:${sd[2] < 1 ? "none": "inline-flex"}"><span>\xa0${sd[2] > 6 ? Math.round(sd[2]) + '%': ""}</span></div>
+              <div class="status-bar3 status-bar" title="Status 3: ${sd[3].toFixed(2)}%" style="flex: ${sd[3].toFixed(2)}; display:${sd[3] < 1 ? "none": "inline-flex"}"><span>\xa0${sd[3] > 6 ? Math.round(sd[3]) + '%': ""}</span></div>
+              <div class="status-bar4 status-bar" title="Status 4: ${sd[4].toFixed(2)}%" style="flex: ${sd[4].toFixed(2)}; display:${sd[4] < 1 ? "none": "inline-flex"}"><span>\xa0${sd[4] > 6 ? Math.round(sd[4]) + '%': ""}</span></div>
+              <div class="status-bar5 status-bar" title="Status 5: ${sd[5].toFixed(2)}%" style="flex: ${sd[5].toFixed(2)}; display:${sd[5] < 1 ? "none": "inline-flex"}"><span>\xa0${sd[5] > 6 ? Math.round(sd[5]) + '%': ""}</span></div>
+              <div class="status-bar99 status-bar" title="Well known (+ Ignored): ${sd[99].toFixed(2)}%" style="flex: ${sd[99].toFixed(2)}; display:${sd[99] < 1 ? "none": "inline-flex"}"><span>\xa0${sd[99] > 6 ? Math.round(sd[99]) + '%': ""}</span></span>
+              <div>`;
+            }
             return ret;
           }
         },
         {
-          "targets": 4,
+          "targets": 5,
           "data": null,
           "searchable": false,
           "orderable": false,
@@ -103,16 +127,16 @@
         },
 
         /* Extra data that is returned in the row for rendering, but not shown. */
-        { "name": "BkID", "targets": 5, "data": null, "visible": false },
-        { "name": "BkArchived", "targets": 6, "data": null, "visible": false },
-        { "name": "WordCount", "targets": 7, "data": null, "visible": false },
-        { "name": "UnknownCount", "targets": 8, "data": null, "visible": false },
-        { "name": "UnknownPercent", "targets": 9, "data": null, "visible": false },
-        { "name": "PageCount", "targets": 10, "data": null, "visible": false },
-        { "name": "DistinctCount", "targets": 11, "data": null, "visible": false },
-        { "name": "PageNum", "targets": 12, "data": null, "visible": false },
-        { "name": "IsCompleted", "targets": 13, "data": null, "visible": false },
-        { "name": "StatusDistribution", "targets": 14, "data": null, "visible": false },
+        { "name": "BkID", "targets": 6, "data": null, "visible": false },
+        { "name": "BkArchived", "targets": 7, "data": null, "visible": false },
+        { "name": "WordCount", "targets": 8, "data": null, "visible": false },
+        { "name": "UnknownCount", "targets": 9, "data": null, "visible": false },
+        { "name": "UnknownPercent", "targets": 10, "data": null, "visible": false },
+        { "name": "PageCount", "targets": 11, "data": null, "visible": false },
+        { "name": "DistinctCount", "targets": 12, "data": null, "visible": false },
+        { "name": "PageNum", "targets": 13, "data": null, "visible": false },
+        { "name": "IsCompleted", "targets": 14, "data": null, "visible": false },
+        { "name": "StatusDistribution", "targets": 15, "data": null, "visible": false },
       ],
 
       // Ajax call
