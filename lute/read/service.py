@@ -88,6 +88,7 @@ def _create_unknown_terms(textitems, lang):
     dt.step("find unique_new_terms")
 
     for t in unique_new_terms:
+        t.status = 0
         db.session.add(t)
     dt.step("before commit")
     db.session.commit()
@@ -121,20 +122,17 @@ def start_reading(dbbook, pagenum, db_session):
         for para in paragraphs
         for sentence in para
         for ti in sentence.textitems
-        if ti.is_word and ti.wo_id is None
+        if ti.is_word and ti.term is None
     ]
-    # Create new terms for all unknown word tokens in the text!
+    # Create new terms for all unknown word tokens in the text.
     new_terms = _create_unknown_terms(unknown_textitems, text.book.language)
 
+    # Set the terms for the unknown_textitems
     textlc_to_term_map = {}
     for t in new_terms:
         textlc_to_term_map[t.text_lc] = t
-
-    for p in paragraphs:
-        for s in p:
-            for ti in s.textitems:
-                if ti.is_word and ti.term is None:
-                    ti.term = textlc_to_term_map[ti.text_lc]
+    for ti in unknown_textitems:
+        ti.term = textlc_to_term_map[ti.text_lc]
 
     return paragraphs
 
