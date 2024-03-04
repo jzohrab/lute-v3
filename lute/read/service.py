@@ -7,9 +7,9 @@ from lute.models.book import Text
 from lute.book.stats import mark_stale
 from lute.read.render.service import get_paragraphs, find_all_Terms_in_string
 from lute.term.model import Repository
-
 from lute.db import db
-from lute.utils.debug_helpers import DebugTimer
+
+# from lute.utils.debug_helpers import DebugTimer
 
 
 def set_unknowns_to_known(text: Text):
@@ -74,26 +74,25 @@ def bulk_status_update(text: Text, terms_text_array, new_status):
 
 def _create_unknown_terms(textitems, lang):
     "Create any terms required for the page."
-    dt = DebugTimer("create-unk-terms")
+    # dt = DebugTimer("create-unk-terms")
     toks = [t.text for t in textitems]
     unique_word_tokens = list(set(toks))
     all_new_terms = [Term(lang, t) for t in unique_word_tokens]
-    dt.step("make all_new_terms")
+    # dt.step("make all_new_terms")
 
     unique_text_lcs = {}
     for t in all_new_terms:
         if t.text_lc not in unique_text_lcs:
             unique_text_lcs[t.text_lc] = t
     unique_new_terms = unique_text_lcs.values()
-    dt.step("find unique_new_terms")
+    # dt.step("find unique_new_terms")
 
     for t in unique_new_terms:
         t.status = 0
         db.session.add(t)
-    dt.step("before commit")
     db.session.commit()
-    dt.step("commit")
-    dt.summary()
+    # dt.step("commit")
+    # dt.summary()
 
     return unique_new_terms
 
@@ -111,11 +110,6 @@ def start_reading(dbbook, pagenum, db_session):
     db_session.commit()
 
     paragraphs = get_paragraphs(text.text, text.book.language)
-    print(paragraphs, flush=True)
-    for p in paragraphs:
-        for s in p:
-            for ti in s.textitems:
-                print(ti, flush=True)
 
     unknown_textitems = [
         ti
