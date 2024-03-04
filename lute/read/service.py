@@ -72,30 +72,29 @@ def bulk_status_update(text: Text, terms_text_array, new_status):
     repo.commit()
 
 
-def _create_unknown_terms(text):
+def _create_unknown_terms(textitems, lang):
     "Create any terms required for the page."
     dt = DebugTimer("create-unk-terms")
-    lang = text.book.language
-    parsed_tokens = lang.parser.get_parsed_tokens(text.text, lang)
-    dt.step("parsed_tokens")
-    word_tokens = [w.token for w in parsed_tokens if w.is_word]
-    dt.step("word_tokens")
-    unique_word_tokens = list(set(word_tokens))
-    dt.step("unique_word_tokens")
-    repo = Repository(db)
-    unique_terms = [repo.find_or_new(lang.id, uwt) for uwt in unique_word_tokens]
-    dt.step("unique_terms find_or_new")
-    new_terms = [t for t in unique_terms if t.id is None]
-    dt.step("new_terms")
-    for t in new_terms:
-        t.status = 0
-        repo.add(t)
+    toks = [t.text for t in textitems]
+    unique_word_tokens = list(set(toks))
+    all_new_terms = [Term(lang, t) for t in unique_word_tokens]
+    dt.step("make all_new_terms")
 
-    # Bulk commit at end.
+    unique_text_lcs = {}
+    for t in all_new_terms:
+        if t.text_lc not in unique_text_lcs:
+            unique_text_lcs[t.text_lc] = t
+    unique_new_terms = unique_text_lcs.values()
+    dt.step("find unique_new_terms")
+
+    for t in unique_new_terms:
+        db.session.add(t)
+    dt.step("before commit")
+    db.session.commit()
     dt.step("commit")
-    repo.commit()
-
     dt.summary()
+
+    return unique_new_terms
 
 
 def start_reading(dbbook, pagenum, db_session):
@@ -110,10 +109,32 @@ def start_reading(dbbook, pagenum, db_session):
     db_session.add(text)
     db_session.commit()
 
-    # Create new terms for all unknown word tokens in the text!
-    _create_unknown_terms(text)
-
     paragraphs = get_paragraphs(text.text, text.book.language)
+    print(paragraphs, flush=True)
+    for p in paragraphs:
+        for s in p:
+            for ti in s.textitems:
+                print(ti, flush=True)
+
+    unknown_textitems = [
+        ti
+        for para in paragraphs
+        for sentence in para
+        for ti in sentence.textitems
+        if ti.is_word and ti.wo_id is None
+    ]
+    # Create new terms for all unknown word tokens in the text!
+    new_terms = _create_unknown_terms(unknown_textitems, text.book.language)
+
+    textlc_to_term_map = {}
+    for t in new_terms:
+        textlc_to_term_map[t.text_lc] = t
+
+    for p in paragraphs:
+        for s in p:
+            for ti in s.textitems:
+                if ti.is_word and ti.term is None:
+                    ti.term = textlc_to_term_map[ti.text_lc]
 
     return paragraphs
 
