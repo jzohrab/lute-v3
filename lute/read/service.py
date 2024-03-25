@@ -133,6 +133,12 @@ def start_reading(dbbook, pagenum, db_session):
 
     lang = text.book.language
     paragraphs = get_paragraphs(text.text, lang)
+    print(f"paras = {paragraphs}", flush=True)
+    for para in paragraphs:
+        for sentence in para:
+            for ti in sentence.textitems:
+                print(ti, flush=True)
+
     _add_status_0_terms(paragraphs, lang)
 
     return paragraphs
