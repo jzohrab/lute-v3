@@ -11,6 +11,7 @@ const dictContainer = document.querySelector(".dictcontainer");
 applyInitialPaneSizes();
 
 function resizeCol(e){
+  // console.log('in resizeCol');
   const dx = mouse_pos - e.x;
   mouse_pos = e.x;
   // getting the width with computedStyle doesn't seem to be working correctly.
@@ -31,6 +32,7 @@ function resizeCol(e){
 }
 
 function resizeRow(e){
+  // console.log('in resizeRow');
   const dx = mouse_pos - e.y;
   mouse_pos = e.y;
   const currentHeightWordFrame = parseFloat(window.getComputedStyle(readPaneRight).gridTemplateRows.split(" ")[0]);
@@ -48,10 +50,25 @@ function resizeRow(e){
 }
 
 function resizePaneRight(e) {
+  // console.log('in resizePaneRight');
   const dy = mouse_pos - e.y;
   mouse_pos = e.y;
 
-  const currentTy = parseFloat(readPaneRight.style.transform.split("(")[1].split(")")[0]);
+  // Hack!!!  Currently, when you open a page and long-click two terms
+  // to create a multiword term, the term edit handles appear right at
+  // the bottom of the screen, and dragging throws an error ("Cannot
+  // read properties of undefined (reading 'split')") ... I can't
+  // figure out why.  Setting the currentTy to 80 at least lets the
+  // thing be draggable.
+  let currentTy = 80;
+  try {
+    currentTy = parseFloat(readPaneRight.style.transform.split("(")[1].split(")")[0]);
+  }
+  catch (error) {
+    console.log("Error on settingTy: " + error.message);
+  }
+  // console.log(`current ty = ${currentTy}`);
+
   let resultTy = currentTy - (dy / document.documentElement.clientHeight * 100);
   resultTy = clamp(resultTy, 5, 95);
   readPaneRight.style.transform = `translateY(${resultTy}%)`;
@@ -60,6 +77,7 @@ function resizePaneRight(e) {
 
 if (mediaTablet.matches) {
   readPaneRight.addEventListener("pointerdown", function(e){
+    // console.log('in rpr pdown');
     if (e.offsetY < borderWidth) {
       // if there's transition animation dragging is not smooth.
       // get's reverted back on document.mouseup below
@@ -73,6 +91,7 @@ if (mediaTablet.matches) {
 }
 
 readPaneRight.addEventListener("mousedown", function(e){
+  // console.log('in rpr mdown');
   if (e.offsetX < borderWidth) {
     setIFrameStatus("none");
     mouse_pos = e.x;
@@ -83,6 +102,7 @@ readPaneRight.addEventListener("mousedown", function(e){
 
 // double click -> widen to 95% temporarily (doesn't save state)
 readPaneRight.addEventListener("dblclick", function(e){
+  // console.log('in rpr dblclick');
   if (e.target != e.currentTarget) return; // fixes: clicking dict tabs resizes panes
   
   if (e.offsetX < borderWidth) {
@@ -99,6 +119,7 @@ readPaneRight.addEventListener("dblclick", function(e){
 });
 
 dictContainer.addEventListener("pointerdown", function(e){
+  // console.log('in dictcont pdown');
   //if not stopPropagation resizing dictcontainer triggers parent event which resizes
   //readPaneRight at the same time (for @media 900)
   e.stopPropagation();
@@ -114,6 +135,7 @@ dictContainer.addEventListener("pointerdown", function(e){
 });
 
 dictContainer.addEventListener("dblclick", function(e){
+  // console.log('in dictcont dblclick');
   if (e.target != e.currentTarget) return; 
   
   if (e.offsetY < borderWidth) {
@@ -126,6 +148,7 @@ dictContainer.addEventListener("dblclick", function(e){
 });
 
 document.addEventListener("pointerup", function(){
+  // console.log('in doc pointerup');
   document.removeEventListener("mousemove", resizeCol);
   document.removeEventListener("pointermove", resizeRow);
   setIFrameStatus("unset");
@@ -138,6 +161,7 @@ document.addEventListener("pointerup", function(){
 
 // if the iframes are clickable mousemove doesn't work correctly
 function setIFrameStatus(status) {
+  // console.log('in setiframestatus');
   wordFrame.style.pointerEvents = status;
   dictFramesCont.style.pointerEvents = status;
 }
@@ -168,14 +192,18 @@ function getWordFrameHeightPercentage() {
 }
 
 function applyInitialPaneSizes() {
+  // console.log('in applyInitialPaneSizes');
   widthDefault = getTextWidthPercentage();
   trHeightDefault = getWordFrameHeightPercentage();
 
   const width = getFromLocalStorage("textWidth", widthDefault);
   const height = getFromLocalStorage("trHeight", trHeightDefault);
+  const ratio = getReadPaneWidthRatio();
+  const pane_right_width = (100 - width) * ratio;
 
+  // console.log(`width = ${width}, h = ${height}, r = ${ratio}, prw = ${pane_right_width}`);
   readPaneLeft.style.width = `${width}%`;
-  readPaneRight.style.width = `${(100 - width) * getReadPaneWidthRatio()}%`;
+  readPaneRight.style.width = `${pane_right_width}%`;
   readPaneRight.style.gridTemplateRows = `${height}% 1fr`;
 }
 
