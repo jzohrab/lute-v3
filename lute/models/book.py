@@ -215,6 +215,9 @@ class Text(db.Model):
     word_count = db.Column("TxWordCount", db.Integer, nullable=True)
 
     book = db.relationship("Book", back_populates="texts")
+    bookmarks = db.relationship(
+        "TextBookmark", backref="text", cascade="all, delete-orphan", lazy=True
+    )
     sentences = db.relationship(
         "Sentence",
         back_populates="text",
@@ -310,6 +313,16 @@ class Text(db.Model):
     def find(text_id):
         "Get by ID."
         return db.session.query(Text).filter(Text.id == text_id).first()
+
+
+class TextBookmark(db.Model):
+    "Bookmark"
+    __tablename__ = "textbookmarks"
+    id = db.Column("TbID", db.Integer, primary_key=True)
+    title = db.Column("TbTitle", db.String, nullable=False)
+    text_id = db.Column(
+        "TbTxID", db.Integer, db.ForeignKey("texts.TxID"), nullable=False
+    )
 
 
 class Sentence(db.Model):

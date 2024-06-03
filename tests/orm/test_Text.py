@@ -3,7 +3,7 @@ Text mapping checks.
 """
 
 from datetime import datetime
-from lute.models.book import Book, Text
+from lute.models.book import Book, Text, TextBookmark
 from lute.db import db
 from tests.dbasserts import assert_record_count_equals
 
@@ -29,3 +29,25 @@ def test_save_text_sentences_replaced_in_db(empty_db, english):
     db.session.add(t)
     db.session.commit()
     assert_record_count_equals("sentences", 1, "back to 1 sentences")
+
+
+def test_delete_text_cascade_deletes_bookmarks(empty_db, english):
+    """
+    book->texts->bookmarks
+    """
+    b = Book("hola", english)
+    t = Text(b, "Tienes un perro. Un gato.")
+
+    # Create the bookmark.  Note that by setting its text,
+    # it's actually implicitly assigned to the actual text object,
+    # due to the sqlalchemy mappings.
+    TextBookmark(title="hello", text=b.texts[0])
+    db.session.add(t)
+    db.session.commit()
+
+    assert_record_count_equals("textbookmarks", 1, "have bookmark")
+
+    db.session.delete(t)
+    db.session.commit()
+
+    assert_record_count_equals("textbookmarks", 0, "bookmark deleted")
