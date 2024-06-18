@@ -70,6 +70,10 @@ def get_data_tables_list(parameters, is_archived):
     if language_id != 0:
         base_sql += f" and LgID = {language_id}"
 
+    # Build "where" and params from the search.
+
+    # Build "order"
+
     # print(base_sql)
     session = db.session
     connection = session.connection()

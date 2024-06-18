@@ -39,8 +39,19 @@ def _load_term_custom_filters(request_form, parameters):
 
 def datatables_source(is_archived):
     "Get datatables json for books."
+
+    # API: get [sort order, search string, length, index, language_id]
+    # from request. These params then get the books, returning json objects.
+    # And should be bound to objects, not just arrays?
+
     parameters = DataTablesFlaskParamParser.parse_params(request.form)
+    parameters_2 = DataTablesFlaskParamParser.parse_params_2(request.form)
     _load_term_custom_filters(request.form, parameters)
+    print("PARAMS", flush=True)
+    print(parameters, flush=True)
+    print("PARAMS_2", flush=True)
+    print(parameters_2, flush=True)
+
     data = get_data_tables_list(parameters, is_archived)
     return jsonify(data)
 
