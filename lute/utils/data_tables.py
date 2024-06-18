@@ -105,6 +105,29 @@ class DataTablesFlaskParamParser:
             "order": DataTablesFlaskParamParser._parse_order(request_params),
         }
 
+    @staticmethod
+    def parse_params_2(requestform) -> dict:
+        """Parse the request (query) parameters."""
+        request_params = requestform.to_dict(flat=True)
+
+        # Need the columns to get the name of the "order" field, as
+        # datatables only deals with the column indexes, not names.
+        columns = DataTablesFlaskParamParser._parse_columns(request_params)
+        order = DataTablesFlaskParamParser._parse_order(request_params)
+        real_order = []
+        for o in order:
+            col = [c["name"] for c in columns if c["index"] == o["column"]]
+            if len(col) == 1:
+                real_order.append({"column": col[0], "dir": o["dir"]})
+
+        return {
+            "draw": int(request_params.get("draw", 1)),
+            "start": int(request_params.get("start", 0)),
+            "length": int(request_params.get("length", -1)),
+            "search": request_params.get("search[value]"),
+            "order": real_order,
+        }
+
 
 class DataTablesSqliteQuery:
     "Get data for datatables rendering."
